@@ -1,22 +1,48 @@
 import { readFileSync } from 'fs';
 import path from 'path';
 
-// you can generate the relative path to the CSV that is in the parent folder of this file:
-const csvFile: string = path.join(__dirname, '..', 'postalcodes.csv');
+function main() {
+    const args = process.argv.slice(2); 
+    const input = args[0];
 
-// file can be read into a string with the `readFileSync` function:
-let fileContents: string = readFileSync(csvFile, 'utf-8');
+    if (!input) {
+        console.log('Syötä postinumero tai nimi.');
+        return;
+    }
+    
+    const data: Map<string, string[]> = new Map();
+    const csvFile: string = path.join(__dirname, '..', 'postalcodes.csv');
+    const fileContents: string = readFileSync(csvFile, 'utf-8');
+    const lines: string[] = fileContents.trim().split('\n');
+    for (const line of lines) {
+        const [numero, toimipaikka] = line.split(',');
+        const paikka = trimmedString(toimipaikka);
+       
+        if (data.has(paikka)) {
+            data.get(paikka)?.push(numero);
+        } else {
+            data.set(paikka, [numero]);
+        }
+    }
+    
+    const result = etsiTiedot(input, data);
+    result?.sort()
 
+    if (result) {
+        console.log(result.join(', '));
+    } else {
+        console.log('Tietoja ei löytynyt.');
+    }
+}
 
-// the string can be split into lines with `split`:
-let lines: string[] = fileContents.trim().split('\n');
+function etsiTiedot(input: string, data: Map<string, string[]>): string[] | undefined {
+    const syote = trimmedString(input);
+    return data.get(syote);
+}
 
-console.log('The first 5 lines read from CSV file:');
-console.table(lines.slice(0, 5));
+function trimmedString(str: string): string {
+    return str.toLowerCase().trim();
+}
 
+main();
 
-// you can access command line arguments via `process.argv` variable:
-let params: string[] = process.argv;
-
-console.log('The contents of the `process.argv` array:');
-console.table(params);
